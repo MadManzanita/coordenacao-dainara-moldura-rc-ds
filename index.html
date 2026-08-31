@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#7c3aed">
+  <title>Coordenação Dainara - Moldura RC/DS</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#251a35;background:#f8f5ff}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#ede4ff,#fff 55%)}main{width:min(980px,100%);margin:auto;padding:28px 18px 48px}header{text-align:center;margin-bottom:24px}h1{margin:0;font-size:clamp(1.55rem,4vw,2.45rem)}header p{color:#665b73}.layout{display:grid;grid-template-columns:minmax(280px,560px) minmax(250px,1fr);gap:24px;align-items:start}.stage{position:relative;aspect-ratio:1;overflow:hidden;border-radius:24px;background:#ddd;box-shadow:0 18px 50px #39285b22;touch-action:none;cursor:grab}.stage:active{cursor:grabbing}.stage canvas{width:100%;height:100%;display:block}.panel{background:#fff;border:1px solid #e8e0f0;border-radius:22px;padding:20px;box-shadow:0 14px 38px #39285b12}.panel h2{margin:0 0 14px;font-size:1rem}.frames{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}.frame{border:3px solid transparent;border-radius:14px;padding:4px;background:#f6f1fb;cursor:pointer}.frame.active{border-color:#7c3aed}.frame img{width:100%;display:block;border-radius:9px;background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 0/12px 12px}.upload{display:block;text-align:center;padding:13px;background:#7c3aed;color:#fff;border-radius:12px;font-weight:700;cursor:pointer;margin-bottom:18px}.upload input{display:none}label.range{display:block;font-weight:700;font-size:.9rem}input[type=range]{width:100%;accent-color:#7c3aed;margin:10px 0 18px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}button{border:0;border-radius:12px;padding:12px;font-weight:700;cursor:pointer}.secondary{background:#eee8f5;color:#382b47}.primary{grid-column:1/-1;background:#17a55b;color:#fff;font-size:1rem}.hint{text-align:center;color:#766a80;font-size:.82rem;margin:14px 0 0}@media(max-width:760px){.layout{grid-template-columns:1fr}.panel{padding:16px}main{padding-top:20px}}
+  </style>
+</head>
+<body><main>
+  <header><h1>Coordenação Dainara - Moldura RC/DS</h1><p>Coloque sua foto, escolha a moldura e baixe sua imagem pronta.</p></header>
+  <section class="layout">
+    <div class="stage" id="stage"><canvas id="canvas" width="1200" height="1200"></canvas></div>
+    <aside class="panel">
+      <h2>1. Escolha a moldura</h2><div class="frames" id="frames"></div>
+      <label class="upload">2. Escolher minha foto<input id="file" type="file" accept="image/*"></label>
+      <label class="range">3. Ajuste o zoom<input id="zoom" type="range" min="0.3" max="4" step="0.01" value="1"></label>
+      <div class="actions"><button class="secondary" id="fit">Ajustar foto</button><button class="secondary" id="center">Centralizar</button><button class="primary" id="download">Baixar foto pronta</button></div>
+      <p class="hint">Arraste a foto para reposicionar. Sua imagem não é enviada para nenhum servidor.</p>
+    </aside>
+  </section>
+  <script>
+  const choices=[['Dourada','moldura-dourada.png'],['Roxa','moldura-roxa.png'],['Azul','moldura-azul.png'],['Rosa','moldura-rosa.png']];
+  const canvas=document.querySelector('#canvas'),ctx=canvas.getContext('2d'),stage=document.querySelector('#stage'),zoom=document.querySelector('#zoom');
+  let photo=null,frame=new Image(),scale=1,x=600,y=600,drag=false,last={x:0,y:0};
+  function draw(){ctx.clearRect(0,0,1200,1200);ctx.fillStyle='#ece9f0';ctx.fillRect(0,0,1200,1200);if(photo){const w=photo.naturalWidth*scale,h=photo.naturalHeight*scale;ctx.drawImage(photo,x-w/2,y-h/2,w,h)}if(frame.complete)ctx.drawImage(frame,0,0,1200,1200)}
+  function fit(){if(!photo)return;scale=Math.max(1200/photo.naturalWidth,1200/photo.naturalHeight);zoom.value=Math.min(4,Math.max(.3,scale));x=y=600;draw()}
+  choices.forEach(([name,src],i)=>{const b=document.createElement('button');b.className='frame'+(i===0?' active':'');b.title=name;b.innerHTML=`<img src="${src}" alt="Moldura ${name}">`;b.onclick=()=>{document.querySelectorAll('.frame').forEach(el=>el.classList.remove('active'));b.classList.add('active');frame.src=src};document.querySelector('#frames').append(b)});frame.onload=draw;frame.src=choices[0][1];
+  document.querySelector('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{photo=im;fit();URL.revokeObjectURL(im.src)};im.src=URL.createObjectURL(f)};
+  zoom.oninput=()=>{scale=+zoom.value;draw()};document.querySelector('#fit').onclick=fit;document.querySelector('#center').onclick=()=>{x=y=600;draw()};
+  function point(e){const r=stage.getBoundingClientRect(),p=e.touches?.[0]||e;return{x:(p.clientX-r.left)*1200/r.width,y:(p.clientY-r.top)*1200/r.height}}
+  stage.onpointerdown=e=>{if(!photo)return;drag=true;last=point(e);stage.setPointerCapture(e.pointerId)};stage.onpointermove=e=>{if(!drag)return;const p=point(e);x+=p.x-last.x;y+=p.y-last.y;last=p;draw()};stage.onpointerup=()=>drag=false;
+  document.querySelector('#download').onclick=async()=>{if(!photo){alert('Escolha uma foto primeiro.');return}canvas.toBlob(async blob=>{const file=new File([blob],'foto-com-moldura.png',{type:'image/png'});if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:'Foto com moldura'});return}catch(e){if(e.name==='AbortError')return}}const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)},'image/png')};draw();
+  </script>
+</main></body></html>
