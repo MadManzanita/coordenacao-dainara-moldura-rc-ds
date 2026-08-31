@@ -22,12 +22,12 @@
     </aside>
   </section>
   <script>
-  const choices=[['Dourada','moldura-dourada.png'],['Roxa','moldura-roxa.png'],['Azul','moldura-azul.png'],['Rosa','moldura-rosa.png']];
+  const choices=[['Dourada','moldura-dourada-v2.png','#d99d08'],['Roxa','moldura-roxa.png','#7200d9'],['Azul','moldura-azul.png','#0738d9'],['Rosa','moldura-rosa.png','#f50073']];
   const canvas=document.querySelector('#canvas'),ctx=canvas.getContext('2d'),stage=document.querySelector('#stage'),zoom=document.querySelector('#zoom');
-  let photo=null,frame=new Image(),scale=1,x=600,y=600,drag=false,last={x:0,y:0};
-  function draw(){ctx.clearRect(0,0,1200,1200);ctx.fillStyle='#ece9f0';ctx.fillRect(0,0,1200,1200);if(photo){const w=photo.naturalWidth*scale,h=photo.naturalHeight*scale;ctx.drawImage(photo,x-w/2,y-h/2,w,h)}if(frame.complete)ctx.drawImage(frame,0,0,1200,1200)}
+  let photo=null,frame=new Image(),frameColor=choices[0][2],scale=1,x=600,y=600,drag=false,last={x:0,y:0};
+  function draw(){ctx.clearRect(0,0,1200,1200);ctx.fillStyle=frameColor;ctx.fillRect(0,0,1200,1200);ctx.save();ctx.beginPath();ctx.arc(600,520,520,0,Math.PI*2);ctx.clip();ctx.fillStyle='#ece9f0';ctx.fillRect(0,0,1200,1200);if(photo){const w=photo.naturalWidth*scale,h=photo.naturalHeight*scale;ctx.drawImage(photo,x-w/2,y-h/2,w,h)}ctx.restore();if(frame.complete)ctx.drawImage(frame,0,0,1200,1200)}
   function fit(){if(!photo)return;scale=Math.max(1200/photo.naturalWidth,1200/photo.naturalHeight);zoom.value=Math.min(4,Math.max(.3,scale));x=y=600;draw()}
-  choices.forEach(([name,src],i)=>{const b=document.createElement('button');b.className='frame'+(i===0?' active':'');b.title=name;b.innerHTML=`<img src="${src}" alt="Moldura ${name}">`;b.onclick=()=>{document.querySelectorAll('.frame').forEach(el=>el.classList.remove('active'));b.classList.add('active');frame.src=src};document.querySelector('#frames').append(b)});frame.onload=draw;frame.src=choices[0][1];
+  choices.forEach(([name,src,color],i)=>{const b=document.createElement('button');b.className='frame'+(i===0?' active':'');b.title=name;b.innerHTML=`<img src="${src}" alt="Moldura ${name}">`;b.onclick=()=>{document.querySelectorAll('.frame').forEach(el=>el.classList.remove('active'));b.classList.add('active');frameColor=color;frame.src=src};document.querySelector('#frames').append(b)});frame.onload=draw;frame.src=choices[0][1];
   document.querySelector('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{photo=im;fit();URL.revokeObjectURL(im.src)};im.src=URL.createObjectURL(f)};
   zoom.oninput=()=>{scale=+zoom.value;draw()};document.querySelector('#fit').onclick=fit;document.querySelector('#center').onclick=()=>{x=y=600;draw()};
   function point(e){const r=stage.getBoundingClientRect(),p=e.touches?.[0]||e;return{x:(p.clientX-r.left)*1200/r.width,y:(p.clientY-r.top)*1200/r.height}}
